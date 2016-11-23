@@ -20,18 +20,13 @@ if (file.exists(destFile)){
 head(CrimeData)
 unique(CrimeData$Text_General_Code)
 unique(CrimeData$Dc_Dist)
+
+
 select(CrimeData, Text_General_Code) %>% unique %>% nrow
 
 
-
-
-plot(CrimeData$Lon, CrimeData$Lat, pch = 12)
-
-
-
-
-
-
+ranking <- group_by(CrimeData, Dc_Dist, Text_General_Code)
+x <- count(ranking ,Dc_Dist)
 
 
 

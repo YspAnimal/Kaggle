@@ -25,8 +25,15 @@ unique(CrimeData$Dc_Dist)
 select(CrimeData, Text_General_Code) %>% unique %>% nrow
 
 
-ranking <- group_by(CrimeData, Dc_Dist, Text_General_Code)
-x <- count(ranking ,Dc_Dist)
+ranking <- group_by(CrimeData, Month, Dc_Dist, Text_General_Code)
+
+
+count(ranking ,Dc_Dist) %>% 
+    summarize(N = sum)
+
+
+
+qplot(x$Month, x$n)
 
 
 

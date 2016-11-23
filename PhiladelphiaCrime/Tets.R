@@ -27,13 +27,21 @@ select(CrimeData, Text_General_Code) %>% unique %>% nrow
 
 ranking <- group_by(CrimeData, Month, Dc_Dist, Text_General_Code)
 
+x <- group_by(CrimeData, Text_General_Code, Month) %>%
+        count(Text_General_Code) %>%
+        summarise(n=sum(n, na.rm = TRUE))
+
+y <- group_by(CrimeData, Month) %>%
+    count(Month)
+
+
 
 count(ranking ,Dc_Dist) %>% 
     summarize(N = sum)
 
 
-
-qplot(x$Month, x$n)
+ggplot(y, aes(x=Month, y=n,group = 1)) + geom_line() + geom_point()
+qplot(y$Month, y$n, geom = "line")
 
 
 

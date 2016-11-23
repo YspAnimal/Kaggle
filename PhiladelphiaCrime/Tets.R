@@ -18,20 +18,33 @@ if (file.exists(destFile)){
 }
 
 head(CrimeData)
+unique(CrimeData$Text_General_Code)
+unique(CrimeData$Dc_Dist)
+select(CrimeData, Text_General_Code) %>% unique %>% nrow
+
+
+
+
+plot(CrimeData$Lon, CrimeData$Lat, pch = 12)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 g <- gmap("Philadelphia, PA, United States", type='hybrid', zoom=11, scale=2)
 plot(g, interpolate=TRUE)
 Phil <- geocode('Philadelphia, 5500 BLOCK N 5TH ST')
 merc <- Mercator(Phil[, c('longitude', 'latitude')])
 points(merc, pch='.', col='red', cex=5)
-
-
-
-
-
-
-
-
-
 
 
 

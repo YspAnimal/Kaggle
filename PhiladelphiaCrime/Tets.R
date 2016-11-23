@@ -34,13 +34,10 @@ x <- group_by(CrimeData, Text_General_Code, Month) %>%
 y <- group_by(CrimeData, Month) %>%
     count(Month)
 
+y.lm <- lm(n ~ Month, y)
 
 
-count(ranking ,Dc_Dist) %>% 
-    summarize(N = sum)
-
-
-ggplot(y, aes(x=Month, y=n,group = 1)) + geom_line() + geom_point()
+ggplot(y, aes(x=Month, y=n,group = 1)) + geom_line() + geom_point() + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))
 qplot(y$Month, y$n, geom = "line")
 
 

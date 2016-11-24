@@ -48,7 +48,7 @@ x.dateSum <- group_by(x, Text_General_Code, Dispatch_Date) %>% count()
 x.timeSum <- group_by(x, Text_General_Code, Dispatch_Time) %>% count() #%>% summarise( )
 
 x.timeSum$Text_General_Code<-as.factor(x.timeSum$Text_General_Code)
-x.timeSum$Dispatch_Time <- as.POSIXct(x.timeSum$Dispatch_Time, format="%H:%M:%S")  
+x.timeSum$Dispatch_Time <- as.POSIXct(x.timeSum$Dispatch_Time, format="%H:%M:%S", tz="GMT")  
 lims <- c(x.timeSum$Dispatch_Time[1], tail(x.timeSum$Dispatch_Time)[1])
 PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time, y=n, group = Text_General_Code, color = Text_General_Code)) +
     geom_point() +

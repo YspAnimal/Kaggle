@@ -8,6 +8,7 @@ library(R.utils)
 library(ggplot2)
 library(plyr)
 library(dplyr)
+library(tidyr)
 library(grid) # for grids
 library(gridExtra) # for advanced plots
 
@@ -34,19 +35,37 @@ x <- group_by(CrimeData, Text_General_Code, Month) %>%
 y <- group_by(CrimeData, Month) %>%
     count(Month)
 
-y.lm <- lm(n ~ Month, y)
-
-
 ggplot(y, aes(x=Month, y=n,group = 1)) + geom_line() + geom_point() + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))
+
+CrimeToAnalyse <- head(arrange(x, desc(n)), 5)$Text_General_Code #Get only top 5 Crime type
+
+x <- filter(CrimeData, Text_General_Code %in% CrimeToAnalyse) %>%
+        group_by(Text_General_Code)
+
+
+x.dateSum <- group_by(x, Text_General_Code, Dispatch_Date) %>% count()
+x.timeSum <- group_by(x, Text_General_Code, Dispatch_Time) %>% count() #%>% summarise( )
+
+x.timeSum$Text_General_Code<-as.factor(x.timeSum$Text_General_Code)
+x.timeSum$Dispatch_Time <- as.POSIXct(x.timeSum$Dispatch_Time, format="%H:%M:%S")  
+
+PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time, y=n, group = Text_General_Code, color = Text_General_Code)) +
+    geom_point() +
+    scale_x_datetime(date_breaks="4 hour") +
+        facet_grid(facets = Text_General_Code ~ .)
+
+
+#+    scale_x_datetime("", date_breaks ="2 hour")# + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))
+
+
+
+
+
+
+
+
+
 qplot(y$Month, y$n, geom = "line")
-
-
-
-
-
-
-
-
 g <- gmap("Philadelphia, PA, United States", type='hybrid', zoom=11, scale=2)
 plot(g, interpolate=TRUE)
 Phil <- geocode('Philadelphia, 5500 BLOCK N 5TH ST')

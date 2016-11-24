@@ -53,7 +53,10 @@ lims <- c(x.timeSum$Dispatch_Time[1], tail(x.timeSum$Dispatch_Time)[1])
 PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time, y=n, group = Text_General_Code, color = Text_General_Code)) +
     geom_point() +
     facet_grid(facets = Text_General_Code ~ .) +
-    scale_x_datetime(date_breaks="1 hour", labels = date_format("%H:%M"), limits=lims)
+    scale_x_datetime(date_breaks="1 hour", labels = date_format("%H:%M"), limits=lims) + 
+    xlab("Dispatch time") +
+    ylab("Total") +
+    ggtitle("Top 5 Crime types")
 
 
 #+    scale_x_datetime("", date_breaks ="2 hour")# + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))

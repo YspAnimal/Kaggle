@@ -11,6 +11,7 @@ library(dplyr)
 library(tidyr)
 library(grid) # for grids
 library(gridExtra) # for advanced plots
+library(scales)
 
 setwd("C:/R_repositories/OthersData/Kaggle/PhiladelphiaCrime")
 destFile <- "crime.csv"
@@ -48,11 +49,11 @@ x.timeSum <- group_by(x, Text_General_Code, Dispatch_Time) %>% count() #%>% summ
 
 x.timeSum$Text_General_Code<-as.factor(x.timeSum$Text_General_Code)
 x.timeSum$Dispatch_Time <- as.POSIXct(x.timeSum$Dispatch_Time, format="%H:%M:%S")  
-
+lims <- c(x.timeSum$Dispatch_Time[1], tail(x.timeSum$Dispatch_Time)[1])
 PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time, y=n, group = Text_General_Code, color = Text_General_Code)) +
     geom_point() +
-    scale_x_datetime(date_breaks="4 hour") +
-        facet_grid(facets = Text_General_Code ~ .)
+    facet_grid(facets = Text_General_Code ~ .) +
+    scale_x_datetime(date_breaks="1 hour", labels = date_format("%H:%M"), limits=lims)
 
 
 #+    scale_x_datetime("", date_breaks ="2 hour")# + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))

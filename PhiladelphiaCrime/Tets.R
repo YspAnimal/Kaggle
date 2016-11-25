@@ -12,6 +12,8 @@ library(tidyr)
 library(grid) # for grids
 library(gridExtra) # for advanced plots
 library(scales)
+library(bit64)
+library(ggmap)
 
 setwd("C:/R_repositories/OthersData/Kaggle/PhiladelphiaCrime")
 destFile <- "crime.csv"
@@ -20,7 +22,7 @@ if (file.exists(destFile)){
 }
 
 head(CrimeData)
-unique(CrimeData$Text_General_Code)
+unique(CrimeData$Text_General_Code) #
 unique(CrimeData$Dc_Dist)
 
 
@@ -34,9 +36,7 @@ x <- group_by(CrimeData, Text_General_Code, Month) %>%
         summarise(n=sum(n, na.rm = TRUE))
 
 y <- group_by(CrimeData, Month) %>%
-    count(Month)
-
-ggplot(y, aes(x=Month, y=n,group = 1)) + geom_line() + geom_point() + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))
+        count(Month)
 
 CrimeToAnalyse <- head(arrange(x, desc(n)), 5)$Text_General_Code #Get only top 5 Crime type
 
@@ -45,21 +45,49 @@ x <- filter(CrimeData, Text_General_Code %in% CrimeToAnalyse) %>%
 
 
 x.dateSum <- group_by(x, Text_General_Code, Dispatch_Date) %>% count()
-x.timeSum <- group_by(x, Text_General_Code, Dispatch_Time) %>% count() #%>% summarise( )
 
+
+
+####Plot day-time graphs for top 5 Crimes contains all data at dataset
+x.timeSum <- group_by(x, Text_General_Code, Dispatch_Time) %>% count() #%>% summarise( )
 x.timeSum$Text_General_Code<-as.factor(x.timeSum$Text_General_Code)
 x.timeSum$Dispatch_Time <- as.POSIXct(x.timeSum$Dispatch_Time, format="%H:%M:%S", tz="GMT")  
 lims <- c(x.timeSum$Dispatch_Time[1], tail(x.timeSum$Dispatch_Time)[1])
-PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time, y=n, group = Text_General_Code, color = Text_General_Code)) +
-    geom_point() +
-    facet_grid(facets = Text_General_Code ~ .) +
-    scale_x_datetime(date_breaks="1 hour", labels = date_format("%H:%M"), limits=lims) + 
-    xlab("Dispatch time") +
-    ylab("Total") +
-    ggtitle("Top 5 Crime types")
+PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time,
+                                     y=n,
+                                     group = Text_General_Code,
+                                     color = Text_General_Code)) +
+            geom_point() +
+            facet_grid(facets = Text_General_Code ~ .) +
+            scale_x_datetime(date_breaks="4 hour",
+                             labels = date_format("%H:%M"),
+                             limits=lims) + 
+            xlab("Dispatch time") +
+            ylab("Total") +
+            ggtitle("Top 5 Crime types") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#####
 
 
-#+    scale_x_datetime("", date_breaks ="2 hour")# + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))
+#####Geo information
+CrimeToGeo <- select(CrimeData, Dc_Dist, Dispatch_Date_Time, Hour, Location_Block, Text_General_Code, Police_Districts, Lon, Lat)
+PhilMap <- get_map(location="Philadelphia, PA, United States", maptype='hybrid')#, zoom=11, scale=2)
+ggmap(PhilMap)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,6 +114,7 @@ gs = gmap('Sydney, Australia', type='satellite', exp=3)
 plot(gs, inter=TRUE)
 gs = gmap('Sydney, Australia', type='hybrid', zoom=10, scale=2)
 plot(gs, inter=TRUE)
+ggplot(y, aes(x=Month, y=n,group = 1)) + geom_line() + geom_point() + stat_smooth(method = "lm", col = "red")#+ geom_line(y.lm, aes(x=Month, y=n,group = 1))
 
 
 

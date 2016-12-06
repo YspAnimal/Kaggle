@@ -1,5 +1,5 @@
 x <- c("ggmap", "rgdal", "rgeos", "maptools", "tidyr", "tmap")
-install.packages(x) # warning: this may take a number of minutes
+#install.packages(x) # warning: this may take a number of minutes
 lapply(x, library, character.only = TRUE) # load the required packages
 
 library(dismo)
@@ -38,16 +38,38 @@ x <- group_by(CrimeData, Text_General_Code, Month) %>%
 y <- group_by(CrimeData, Month) %>%
         count(Month)
 
-CrimeToAnalyse <- head(arrange(x, desc(n)), 5)$Text_General_Code #Get only top 5 Crime type
+CrimeToAnalyse <- head(arrange(x, desc(n)), 15)$Text_General_Code #Get only top 5 Crime type
 
-x <- filter(CrimeData, Text_General_Code %in% CrimeToAnalyse) %>%
-        group_by(Text_General_Code)
+x <- filter(CrimeData, Text_General_Code %in% CrimeToAnalyse)
 
+#x.dateSum <- group_by(x, Text_General_Code, Dispatch_Date) %>% count()
 
-x.dateSum <- group_by(x, Text_General_Code, Dispatch_Date) %>% count()
+x.yearSum <- group_by(x, Text_General_Code, Dispatch_Date) %>% count()
+#x.yearSum$Dispatch_Date <- as.POSIXlt(x.yearSum$Dispatch_Date, format="%Y-%m-%d")
 
+x.yearSum$year = as.factor(as.POSIXlt(x.yearSum$Dispatch_Date, format="%Y-%m-%d")$year+1900)
+x.yearSum <- group_by(x.yearSum, year, Text_General_Code) %>%
+                    count() %>%
+                    summarise()
 
-
+#x.yearSum <- group_by(x.yearSum, year, Text_General_Code) %>% count()
+############
+#lims <- c(x.timeSum$Dispatch_Time[1], tail(x.timeSum$Dispatch_Time)[1])
+PlotTS <- ggplot(data=x.yearSum, aes(x=Text_General_Code,
+                                     y=n,
+                                     group = year,
+                                     color = year)) +
+    geom_point() +
+    facet_grid(facets = Text_General_Code ~ .) +
+    scale_x_datetime(date_breaks="4 hour",
+                     labels = date_format("%H:%M"),
+                     limits=lims) + 
+    xlab("Dispatch time") +
+    ylab("Total") +
+    ggtitle("Top 5 Crime types") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#################
+    
 ####Plot day-time graphs for top 5 Crimes contains all data at dataset
 x.timeSum <- group_by(x, Text_General_Code, Dispatch_Time) %>% count() #%>% summarise( )
 x.timeSum$Text_General_Code<-as.factor(x.timeSum$Text_General_Code)
@@ -66,6 +88,9 @@ PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time,
             ylab("Total") +
             ggtitle("Top 5 Crime types") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
 #####
 
 
@@ -73,7 +98,7 @@ PlotTS <- ggplot(data=x.timeSum, aes(x=Dispatch_Time,
 CrimeToGeo <- select(CrimeData, Dc_Dist, Dispatch_Date_Time, Hour, Location_Block, Text_General_Code, Police_Districts, Lon, Lat)
 PhilMap <- get_map(location="Philadelphia, PA, United States", maptype='hybrid')#, zoom=11, scale=2)
 ggmap(PhilMap)
-
+plot(PhilMap)
 
 
 

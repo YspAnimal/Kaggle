@@ -47,12 +47,21 @@ options(mc.cores=1)
 Tokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
 BigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
 TrigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
-unigram <- DocumentTermMatrix(Neg.cor, control = list(tokenize = Tokenizer))
-bigram <- DocumentTermMatrix(Neg.cor, control = list(tokenize = BigramTokenizer))
-trigram <- DocumentTermMatrix(Neg.cor, control = list(tokenize = TrigramTokenizer))
 
-bigramNeg <- removeSparseTerms(bigram, 0.98)
-trigramNeg <- removeSparseTerms(trigram, 0.9999)
+unigramNeg <- DocumentTermMatrix(Neg.cor, control = list(tokenize = Tokenizer))
+bigramNeg <- DocumentTermMatrix(Neg.cor, control = list(tokenize = BigramTokenizer))
+trigramNeg <- DocumentTermMatrix(Neg.cor, control = list(tokenize = TrigramTokenizer))
+unigramNeg <- removeSparseTerms(unigramNeg, 0.98)
+bigramNeg <- removeSparseTerms(bigramNeg, 0.99)
+trigramNeg <- removeSparseTerms(trigramNeg, 0.9999)
+unigramPos <- DocumentTermMatrix(Pos.cor, control = list(tokenize = Tokenizer))
+bigramPos <- DocumentTermMatrix(Pos.cor, control = list(tokenize = BigramTokenizer))
+trigramPos <- DocumentTermMatrix(Pos.cor, control = list(tokenize = TrigramTokenizer))
+unigramPos <- removeSparseTerms(unigramPos, 0.98)
+bigramPos <- removeSparseTerms(bigramPos, 0.99)
+trigramPos <- removeSparseTerms(trigramPos, 0.9999)
+
+
 
 
 

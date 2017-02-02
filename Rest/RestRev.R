@@ -5,17 +5,29 @@ library(dplyr)
 library(tm)
 library(slam)
 library(RWeka)
+library(grid) # for grids
+library(gridExtra) # for advanced plots
+
 ##################################################
 setwd("C:/R_repositories/Kaggle/Rest")
 destFile <- "1-restaurant-train.csv"
 if (file.exists(destFile)){
     #ResReviewDataTrain <- readLines(destFile)#fread(destFile, sep= "?", header = FALSE)
-    ResReviewDataTrain <- fread(destFile, nrows = 36024)#, sep= "?", header = FALSE)
+    ResReviewDataTrain <- fread(destFile)#, nrows = 36024)#, sep= "?", header = FALSE)
     #ResReviewDataTrain2 <- fread(destFile, sep= "?", header = FALSE)
 }
-ResReviewDataTrain <- mutate(ResReviewDataTrain, review = ifelse(V1>=4, 2, 0)) %>% select(- V1)
+
+PreProcData <- function(x) {
+    mutate(x, review = ifelse(V1>=4, 1, 0)) %>% 
+        select(- V1)
+}
+
+
+ResReviewDataTrain <- mutate(ResReviewDataTrain, review = ifelse(V1>=4, 1, 0)) %>% select(- V1)
 DataTrainPos <- filter(ResReviewDataTrain, review == 1)
 DataTrainNeg <- filter(ResReviewDataTrain, review == 0)
+
+
 
 Pos.cor <- VectorSource(DataTrainPos$V2) %>% Corpus()
 meta(Pos.cor, tag = "type") <- "Positive"
@@ -33,12 +45,12 @@ DTMPos <- DocumentTermMatrix(Pos.cor)
 Neg.cor <- VectorSource(DataTrainNeg$V2) %>% Corpus()
 meta(Pos.cor, tag = "type") <- "Negative"
 Neg.cor <- tm_map(Neg.cor, toSpace, "@[^\\s]+") %>%
-            tm_map(Neg.cor, toSpace, "[^\\p{L}\\s[']]+") %>%
-            tm_map(Neg.cor, content_transformer(tolower)) %>%
-            tm_map(Neg.cor, removePunctuation) %>%
-            tm_map(Neg.cor, removeNumbers) %>%
-            tm_map(Neg.cor, removeWords, stopwords("english")) %>%
-            tm_map(Neg.cor, stripWhitespace)
+            tm_map(toSpace, "[^\\p{L}\\s[']]+") %>%
+            tm_map(content_transformer(tolower)) %>%
+            tm_map(removePunctuation) %>%
+            tm_map(removeNumbers) %>%
+            tm_map(removeWords, stopwords("english")) %>%
+            tm_map(stripWhitespace)
 DTMNeg <- DocumentTermMatrix(Neg.cor)
 #DTMNeg <- removeSparseTerms(DTMNeg, 0.98)
 
@@ -72,6 +84,7 @@ GetWordFreq <- function(data) {
 
 
 NegBiFreq <- GetWordFreq(bigramNeg)
+PosBiFreq <- GetWordFreq(bigramPos)
 
 Posfreq <- sort(colSums(as.matrix(trigramPos)), decreasing=TRUE)
 Poswordfreq <- data.frame(word=names(Posfreq), freq=Posfreq)
@@ -88,10 +101,14 @@ makePlot <- function(data, label) {
         theme(axis.text.x = element_text(angle = 60, size = 12, hjust = 1)) +
         geom_bar(stat = "identity", fill = I("grey50"))
     }
-makePlot(Poswordfreq, "20 Most Common Positive Trigram")
-makePlot(Negwordfreq, "20 Most Common Negative Trigram")
+PosTPlot <- makePlot(Poswordfreq, "20 Most Common Positive Trigram")
+NegTPlot <- makePlot(Negwordfreq, "20 Most Common Negative Trigram")
 
-makePlot(NegBiFreq, "20 Most Common Negative Bigram")
+NegBPlot <- makePlot(NegBiFreq, "20 Most Common Negative Bigram")
+PosBPlot <- makePlot(PosBiFreq, "20 Most Common Negative Bigram")
+
+grid.arrange(PosTPlot, NegTPlot, ncol = 2)  
+grid.arrange(PosBPlot, NegBPlot, ncol = 2)  
 
 
 

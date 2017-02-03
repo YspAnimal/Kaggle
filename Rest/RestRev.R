@@ -17,14 +17,13 @@ if (file.exists(destFile)){
     #ResReviewDataTrain2 <- fread(destFile, sep= "?", header = FALSE)
 }
 
-PreProcData <- function(x) {
-    mutate(x, review = ifelse(V1>=4, 1, 0)) %>% 
-        select(- V1)
-}
 
 
-ResReviewDataTrain <- mutate(ResReviewDataTrain, review = ifelse(V1>=4, 1, 0)) %>% select(- V1)
-DataTrainPos <- filter(ResReviewDataTrain, review == 1)
+ResReviewDataTrain <- mutate(ResReviewDataTrain, review = ifelse(V1>=4, 2, ifelse(V1==3, 1, 0))) %>% select(- V1)
+
+#ResReviewDataTrain <- mutate(ResReviewDataTrain, review = ifelse(V1>=4, 1, 0)) %>% select(- V1)
+DataTrainPos <- filter(ResReviewDataTrain, review == 2)
+DataTrainNet <- filter(ResReviewDataTrain, review == 1)
 DataTrainNeg <- filter(ResReviewDataTrain, review == 0)
 
 
@@ -43,7 +42,7 @@ DTMPos <- DocumentTermMatrix(Pos.cor)
 #DTMPos <- removeSparseTerms(DTMPos, 0.98)
 
 Neg.cor <- VectorSource(DataTrainNeg$V2) %>% Corpus()
-meta(Pos.cor, tag = "type") <- "Negative"
+meta(Neg.cor, tag = "type") <- "Negative"
 Neg.cor <- tm_map(Neg.cor, toSpace, "@[^\\s]+") %>%
             tm_map(toSpace, "[^\\p{L}\\s[']]+") %>%
             tm_map(content_transformer(tolower)) %>%
@@ -52,6 +51,18 @@ Neg.cor <- tm_map(Neg.cor, toSpace, "@[^\\s]+") %>%
             tm_map(removeWords, stopwords("english")) %>%
             tm_map(stripWhitespace)
 DTMNeg <- DocumentTermMatrix(Neg.cor)
+
+Net.cor <- VectorSource(DataTrainNet$V2) %>% Corpus()
+meta(Net.cor, tag = "type") <- "Neutral"
+Net.cor <- tm_map(Net.cor, toSpace, "@[^\\s]+") %>%
+    tm_map(toSpace, "[^\\p{L}\\s[']]+") %>%
+    tm_map(content_transformer(tolower)) %>%
+    tm_map(removePunctuation) %>%
+    tm_map(removeNumbers) %>%
+    tm_map(removeWords, stopwords("english")) %>%
+    tm_map(stripWhitespace)
+DTMNeg <- DocumentTermMatrix(Net.cor)
+
 #DTMNeg <- removeSparseTerms(DTMNeg, 0.98)
 
 library(RWeka)
@@ -72,9 +83,15 @@ trigramPos <- DocumentTermMatrix(Pos.cor, control = list(tokenize = TrigramToken
 unigramPos <- removeSparseTerms(unigramPos, 0.98)
 bigramPos <- removeSparseTerms(bigramPos, 0.99)
 trigramPos <- removeSparseTerms(trigramPos, 0.9995)
+unigramNet <- DocumentTermMatrix(Net.cor, control = list(tokenize = Tokenizer))
+bigramNet <- DocumentTermMatrix(Net.cor, control = list(tokenize = BigramTokenizer))
+trigramNet <- DocumentTermMatrix(Net.cor, control = list(tokenize = TrigramTokenizer))
+unigramNet <- removeSparseTerms(unigramNet, 0.98)
+bigramNet <- removeSparseTerms(bigramNet, 0.99)
+trigramNet <- removeSparseTerms(trigramNet, 0.9995)
 
 #####################################
-##   Exploratory case   #############
+##   Exploratory step   #############
 #####################################
 
 GetWordFreq <- function(data) {
@@ -85,6 +102,7 @@ GetWordFreq <- function(data) {
 
 NegBiFreq <- GetWordFreq(bigramNeg)
 PosBiFreq <- GetWordFreq(bigramPos)
+NetBiFreq <- GetWordFreq(bigramNet)
 
 Posfreq <- sort(colSums(as.matrix(trigramPos)), decreasing=TRUE)
 Poswordfreq <- data.frame(word=names(Posfreq), freq=Posfreq)
@@ -93,6 +111,10 @@ head(Poswordfreq,5)
 Negfreq <- sort(colSums(as.matrix(trigramNeg)), decreasing=TRUE)
 Negwordfreq <- data.frame(word=names(Negfreq), freq=Negfreq)
 head(Negwordfreq,5)
+
+Netfreq <- sort(colSums(as.matrix(trigramNet)), decreasing=TRUE)
+Networdfreq <- data.frame(word=names(Netfreq), freq=Netfreq)
+head(Networdfreq,5)
 
 
 makePlot <- function(data, label) {
@@ -110,18 +132,24 @@ PosBPlot <- makePlot(PosBiFreq, "20 Most Common Negative Bigram")
 grid.arrange(PosTPlot, NegTPlot, ncol = 2)  
 grid.arrange(PosBPlot, NegBPlot, ncol = 2)  
 
+#####################################
+##   Learning step   ################
+#####################################
 
 
+NegativeFeatureDF <- cbind(DataTrainNeg, data.frame(inspect(unigramNeg)),
+                           data.frame(inspect(bigramNeg)),
+                           data.frame(inspect(trigramNeg)))
 
+PositiveFeatureDF <- cbind(DataTrainPos, data.frame(inspect(unigramPos)),
+                           data.frame(inspect(bigramPos)),
+                           data.frame(inspect(trigramPos)))
 
+NeutralFeatureDF <- cbind(DataTrainNet, data.frame(inspect(unigramNet)),
+                           data.frame(inspect(bigramNet)),
+                           data.frame(inspect(trigramNet)))
 
-
-
-
-
-
-
-
+#DF <- rbind(NegativeFeatureDF, PositiveFeatureDF, NeutralFeatureDF)
 
 
 

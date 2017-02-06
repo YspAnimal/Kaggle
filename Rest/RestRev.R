@@ -99,10 +99,17 @@ GetWordFreq <- function(data) {
     data.frame(word=names(fr), freq=fr)
 }
 
+NegUniFreq <- GetWordFreq(unigramNeg)[1:100, ]
+PosUniFreq <- GetWordFreq(unigramPos)[1:100, ]
+NetUniFreq <- GetWordFreq(unigramNet)[1:100, ]
 
-NegBiFreq <- GetWordFreq(bigramNeg)
-PosBiFreq <- GetWordFreq(bigramPos)
-NetBiFreq <- GetWordFreq(bigramNet)
+NegBiFreq <- GetWordFreq(bigramNeg)[1:100, ]
+PosBiFreq <- GetWordFreq(bigramPos)[1:100, ]
+NetBiFreq <- GetWordFreq(bigramNet)[1:100, ]
+
+NegTriFreq <- GetWordFreq(trigramNeg)[1:100, ]
+PosTriFreq <- GetWordFreq(trigramPos)[1:100, ]
+NetTriFreq <- GetWordFreq(trigramNet)[1:100, ]
 
 Posfreq <- sort(colSums(as.matrix(trigramPos)), decreasing=TRUE)
 Poswordfreq <- data.frame(word=names(Posfreq), freq=Posfreq)
@@ -136,24 +143,51 @@ grid.arrange(PosBPlot, NegBPlot, ncol = 2)
 ##   Learning step   ################
 #####################################
 
-
-NegativeFeatureDF <- cbind(DataTrainNeg, data.frame(inspect(unigramNeg)),
-                           data.frame(inspect(bigramNeg)),
-                           data.frame(inspect(trigramNeg)))
-
-PositiveFeatureDF <- cbind(DataTrainPos, data.frame(inspect(unigramPos)),
-                           data.frame(inspect(bigramPos)),
-                           data.frame(inspect(trigramPos)))
-
-NeutralFeatureDF <- cbind(DataTrainNet, data.frame(inspect(unigramNet)),
-                           data.frame(inspect(bigramNet)),
-                           data.frame(inspect(trigramNet)))
-
-#DF <- rbind(NegativeFeatureDF, PositiveFeatureDF, NeutralFeatureDF)
+tmp <- inspect(unigramNeg[, as.vector(NegUniFreq$word)])
+as.vector(NegUniFreq$word)
 
 
 
+NegativeFeatureDF <- cbind(DataTrainNeg, data.frame(inspect(unigramNeg[, as.vector(NegUniFreq$word)])),
+                           data.frame(inspect(bigramNeg[, as.vector(NegBiFreq$word)])),
+                           data.frame(inspect(trigramNeg[, as.vector(NegTriFreq$word)])))
 
+PositiveFeatureDF <- cbind(DataTrainPos, data.frame(inspect(unigramPos[, as.vector(PosUniFreq$word)])),
+                           data.frame(inspect(bigramPos[, as.vector(PosBiFreq$word)])),
+                           data.frame(inspect(trigramPos[, as.vector(PosTriFreq$word)])))
+
+NeutralFeatureDF <- cbind(DataTrainNet, data.frame(inspect(unigramNet[, as.vector(NetUniFreq$word)])),
+                           data.frame(inspect(bigramNet[, as.vector(NetBiFreq$word)])),
+                           data.frame(inspect(trigramNet[, as.vector(NetTriFreq$word)])))
+
+colnames(NegativeFeatureDF) <- c("t", "score")
+colnames(PositiveFeatureDF) <- c("t", "score")
+colnames(NeutralFeatureDF) <- c("t", "score")
+
+DF <- rbind(NegativeFeatureDF, PositiveFeatureDF, NeutralFeatureDF)
+#DF <- DF[sample(nrow(DF)),] #shuffle rows in a dataframe
+#DFMod <- subset(DF, select = -t)
+
+rm(list=setdiff(ls(), c("DFMod", "DF"))) #Remove all from workspase except DFMod
+
+
+library(e1071)
+library(caret)
+
+intrain<-createDataPartition(y=DF$score,p=0.7,list=FALSE)
+DFtraining<-DF[intrain,]
+DFtesting<-DF[-intrain,]
+DFtrainingSub <- subset(DFtraining, select = -t)
+
+t_start <- Sys.time()
+
+set.seed(3113)
+svm_model <- svm(score ~ ., data=DFtrainingSub)
+
+t_end <- Sys.time()
+ModelTime <- t_end-t_start
+
+summary(svm_model)
 
 
 

@@ -177,19 +177,82 @@ library(caret)
 intrain<-createDataPartition(y=DF$score,p=0.7,list=FALSE)
 DFtraining<-DF[intrain,]
 DFtesting<-DF[-intrain,]
-DFtrainingSub <- subset(DFtraining, select = -t)
+
+
+#####################################
+## Try PCA for the first ############
+#####################################
+# colnames(DF) <- c("t", "score", as.character(c(1:300)))
+# apply(DF,2,var)
+# pca <- prcomp(DF[, c(-1,-2)])
+# plot(pca)
+# pca$rotation=-pca$rotation
+# pca$x=-pca$x
+# biplot (pca , scale =0)
+
+#####################################
+##   SVM section   ################
+#####################################
+colnames(DFtraining) <- c("t", "score", as.character(c(1:300)))
+DFtraining$score <- as.factor(DFtraining$score)
+
+
+t_start <- Sys.time()
+set.seed(3113)
+
+svm_model <- svm(score ~ ., data=DFtraining[, -1])
+smDFtraining <- DFtraining[,-c(3:200)]
+svm_model <- svm(score ~ ., data=smDFtraining[,-1])
+
+t_end <- Sys.time()
+ModelTime <- t_end-t_start
+summary(svm_model)
+
+
+tmp <- DFtesting[,c(-1, -2)]
+
+svm_test <- predict(svm_model, data=DFtesting[,c(-1, -2)], decision.values = T, probability = T)
+table(svm_test, DFtesting[, 2])
+plot(svm_test,data=DFtesting)
+
+
+#####################################
+##   Random forest section  ###
+#####################################
+
+t_start <- Sys.time()
+set.seed(3114)
+forest <- train(score ~., data=DFtraining[, -1],
+                method="rf",
+                trControl=trainControl(method="cv",number=5),
+                prox=TRUE,
+                ntree=100,
+                do.trace=10,
+                allowParallel=TRUE)
+t_end <- Sys.time()
+
+# Смотрим на модель и на время обучения
+t_end-t_start
+print(forest)
+
+#####################################
+##   Logistic regression section  ###
+#####################################
+DFtestingSub <- subset(DFtesting, select = -t) 
+ScoreTest <- DFtesting[,1]
+DFtestingSub <- subset(DFtestingSub, select = -score)
 
 t_start <- Sys.time()
 
-set.seed(3113)
-svm_model <- svm(score ~ ., data=DFtrainingSub)
+set.seed(3115)
+glm_model <- glm(score ~ ., data=DFtraining[, -1])
 
 t_end <- Sys.time()
 ModelTime <- t_end-t_start
 
-summary(svm_model)
+summary(glm_model)
 
-
+glm_test <- predict(glm_model, data=DFtesting[, c(-1,-2)])
 
 
 

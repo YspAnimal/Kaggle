@@ -1,0 +1,61 @@
+---
+title: "KAGGLE in Class competition 'Restaurant reviews'"
+author: "Solovey Nikolay"
+date: '10.02.2017'
+link to kaggle: https://inclass.kaggle.com/c/restaurant-reviews
+output:
+  html_document: 
+    keep_md: yes
+    toc: yes
+  pdf_document: default
+---
+
+### 1. Assignment
+
+Are people happy about the restaurant? Find this out!
+Goal of this competition is to learn predicting whether restaurant review is positive or negative.  
+
+#### 1.1 Data format
+All reviews store in a .csl files(train.csv, test.csv). Each line of train.csv contains a grade (1, 2, 3, 4 or 5) and a review, separated by tab, for example:
+
+**Score** | **Review**
+----- | -------------
+4     | I liked it!
+2     | Awful place!
+
+Each line of test.csv contains only review.  
+**The goal is to predict whether review is positive (grade is 4, 5) or not (grade is 1, 2, 3).**
+
+### 2. Synopsis
+
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+sessionInfo() # Display information about system
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

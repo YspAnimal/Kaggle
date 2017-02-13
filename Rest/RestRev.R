@@ -99,17 +99,17 @@ GetWordFreq <- function(data) {
     data.frame(word=names(fr), freq=fr)
 }
 
-NegUniFreq <- GetWordFreq(unigramNeg)[1:100, ]
-PosUniFreq <- GetWordFreq(unigramPos)[1:100, ]
-NetUniFreq <- GetWordFreq(unigramNet)[1:100, ]
+NegUniFreq <- GetWordFreq(unigramNeg)[1:130, ]
+PosUniFreq <- GetWordFreq(unigramPos)[1:130, ]
+NetUniFreq <- GetWordFreq(unigramNet)[1:130, ]
 
-NegBiFreq <- GetWordFreq(bigramNeg)[1:100, ]
-PosBiFreq <- GetWordFreq(bigramPos)[1:100, ]
-NetBiFreq <- GetWordFreq(bigramNet)[1:100, ]
+NegBiFreq <- GetWordFreq(bigramNeg)[1:130, ]
+PosBiFreq <- GetWordFreq(bigramPos)[1:130, ]
+NetBiFreq <- GetWordFreq(bigramNet)[1:130, ]
 
-NegTriFreq <- GetWordFreq(trigramNeg)[1:100, ]
-PosTriFreq <- GetWordFreq(trigramPos)[1:100, ]
-NetTriFreq <- GetWordFreq(trigramNet)[1:100, ]
+NegTriFreq <- GetWordFreq(trigramNeg)[1:130, ]
+PosTriFreq <- GetWordFreq(trigramPos)[1:130, ]
+NetTriFreq <- GetWordFreq(trigramNet)[1:130, ]
 
 Posfreq <- sort(colSums(as.matrix(trigramPos)), decreasing=TRUE)
 Poswordfreq <- data.frame(word=names(Posfreq), freq=Posfreq)
@@ -173,6 +173,7 @@ rm(list=setdiff(ls(), c("DFMod", "DF"))) #Remove all from workspase except DFMod
 
 library(e1071)
 library(caret)
+library(kernlab)
 
 intrain<-createDataPartition(y=DF$score,p=0.7,list=FALSE)
 DFtraining<-DF[intrain,]
@@ -195,25 +196,41 @@ DFtesting<-DF[-intrain,]
 #####################################
 colnames(DFtraining) <- c("t", "score", as.character(c(1:300)))
 DFtraining$score <- as.factor(DFtraining$score)
-
+colnames(DFtesting) <- c("t", "score", as.character(c(1:300)))
+DFtesting
 
 t_start <- Sys.time()
 set.seed(3113)
 
-svm_model <- svm(score ~ ., data=DFtraining[, -1])
-smDFtraining <- DFtraining[,-c(3:200)]
-svm_model <- svm(score ~ ., data=smDFtraining[,-1])
+svm_model <- svm(score ~ ., data=DFtraining[, -1], decision.values = T, probability = T)
+# smDFtraining <- DFtraining[,-c(3:200)]
+# svm_model <- svm(score ~ ., data=smDFtraining[,-1])
 
 t_end <- Sys.time()
 ModelTime <- t_end-t_start
 summary(svm_model)
 
+##Another svm(ksvm)
+t_start <- Sys.time()
+set.seed(4113)
 
-tmp <- DFtesting[,c(-1, -2)]
+ksvm_model <- ksvm(score ~ ., data=DFtraining[, -1], kernel = "rbfdot", decision.values = T, probability = T)
 
-svm_test <- predict(svm_model, data=DFtesting[,c(-1, -2)], decision.values = T, probability = T)
+t_end <- Sys.time()
+ModelTime <- t_end-t_start
+summary(ksvm_model)
+
+ksvm_test <- predict(ksvm_model, DFtesting[,c(-1, -2)])
+table(ksvm_test, DFtesting[, 2])
+mean(ksvm_test==DFtesting[, 2])
+
+
+
+svm_test <- predict(svm_model, DFtesting[,c(-1, -2)], decision.values = T, probability = T)
+head(svm_test[24615:24640], 20)
+
 table(svm_test, DFtesting[, 2])
-plot(svm_test,data=DFtesting)
+mean(svm_test==DFtesting[, 2])
 
 
 #####################################
@@ -226,7 +243,7 @@ forest <- train(score ~., data=DFtraining[, -1],
                 method="rf",
                 trControl=trainControl(method="cv",number=5),
                 prox=TRUE,
-                ntree=100,
+                ntree=10,
                 do.trace=10,
                 allowParallel=TRUE)
 t_end <- Sys.time()
@@ -252,7 +269,25 @@ ModelTime <- t_end-t_start
 
 summary(glm_model)
 
-glm_test <- predict(glm_model, data=DFtesting[, c(-1,-2)])
+glm_test <- predict(glm_model, DFtesting[, c(-1,-2)])
+
+#####################################
+##   Naive bayes section  ###########
+#####################################
+
+t_start <- Sys.time()
+set.seed(3119)
+
+nb_model <- naiveBayes(score~.,data = DFtraining[, -1])
+
+t_end <- Sys.time()
+ModelTime <- t_end-t_start
+summary(nb_model)
+nb_test <- predict(nb_model, DFtesting[,c(-1, -2)])
+table(nb_test, DFtesting[, 2])
+table(pred=nb_test,true=DFtesting[, 2])
+mean(nb_test==DFtesting[, 2])
+
 
 
 

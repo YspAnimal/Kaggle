@@ -165,7 +165,7 @@ colnames(PositiveFeatureDF) <- c("t", "score")
 colnames(NeutralFeatureDF) <- c("t", "score")
 
 DF <- rbind(NegativeFeatureDF, PositiveFeatureDF, NeutralFeatureDF)
-#DF <- DF[sample(nrow(DF)),] #shuffle rows in a dataframe
+DF <- DF[sample(nrow(DF)),] #shuffle rows in a dataframe
 #DFMod <- subset(DF, select = -t)
 
 rm(list=setdiff(ls(), c("DFMod", "DF"))) #Remove all from workspase except DFMod
@@ -288,27 +288,44 @@ table(nb_test, DFtesting[, 2])
 table(pred=nb_test,true=DFtesting[, 2])
 mean(nb_test==DFtesting[, 2])
 
+#####################################
+##   Neural network section  ########
+#####################################
+DFtrainingNN <- DFtraining
+colnames(DFtrainingNN) <- c("t", "score", paste0("V", as.character(c(1:390))))
+
+library(neuralnet)
+library(nnet)
+tmp <- mutate(DFtrainingNN, NNscore = class.ind(DFtrainingNN$score))
+DFtrainingNN$score <- class.ind(DFtrainingNN$score)
+
+n <- names(DFtrainingNN[,c(-1, -2)])
+f <- as.formula(paste("score0+score1+score2~", paste(n[!n %in% "score"], collapse = " + ")))
+mf <- as.formula(paste("~ score +", paste(n[!n %in% "score"], collapse = " + ")))
+m <- model.matrix( 
+    mf, 
+    data = DFtrainingNN[, -1] 
+)
+
+nn <- neuralnet(f, m[, -1], hidden=3, act.fct = "logistic", linear.output=F)
+
+nn <- neuralnet(f, DFtrainingNN[, -1], hidden=c(10,5), linear.output=F)
 
 
 
 
 
 
-# tm_trifreq <- sort(colSums(as.matrix(bigramNeg)), decreasing=TRUE)
-# tm_triwordfreq <- data.frame(word=names(tm_trifreq), freq=tm_trifreq)
-# head(tm_triwordfreq,5)
 
 
 
 
-# DTMPos_Mat <- as.matrix(DTMPos)
-# DTMPos_v <- sort(colSums(DTMPos_Mat),decreasing=TRUE)
-# DTMPos_d <- data.frame(word = names(DTMPos_v),freq=DTMPos_v)
-# #table(DTMPos_d$freq)
-# 
-# 
-# DTMNeg_Mat <- as.matrix(DTMNeg)
-# DTMNeg_v <- sort(colSums(DTMNeg_Mat),decreasing=TRUE)
-# DTMNeg_d <- data.frame(word = names(DTMNeg_v),freq=DTMNeg_v)
-# #table(DTMNeg_d$freq)
+
+
+
+
+
+
+
+
 

@@ -200,9 +200,13 @@ colnames(DFtesting) <- c("t", "score", as.character(c(1:300)))
 DFtesting
 
 t_start <- Sys.time()
-set.seed(3113)
+set.seed(3)
+tunesvm <- tune(svm, score ~ .,
+                data=DFtraining[, -1],
+                kernel = "radial",
+                ranges = list(cost = c(0.001, 0.01, 0.1, 1, 5, 10, 100)),
+                decision.values = T, probability = T)
 
-svm_model <- svm(score ~ ., data=DFtraining[, -1], decision.values = T, probability = T)
 # smDFtraining <- DFtraining[,-c(3:200)]
 # svm_model <- svm(score ~ ., data=smDFtraining[,-1])
 
